@@ -41,7 +41,7 @@ flowchart LR
 
 ## T-08 の筋書き（バッテリー交換）
 
-人が手で確認する。AIは手順書（`tests/manual/demo.md`）を作るところまで。
+人が手で確認する。AIは手順書（[tests/manual/demo.md](../tests/manual/demo.md)）を作るところまで。
 
 1. デモアカウントでログインし、デモ端末にバッテリー交換の記録を1件書く
 2. チェーン記録済みになり、Etherscanでトランザクションが見える
