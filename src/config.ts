@@ -47,3 +47,15 @@ export function isMockEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
 export const DEVICE_CODE_MAX_LENGTH = 64;
 /** モックが返す「書き込みできる時間」（案：5分。本物はGoが決める） */
 export const MOCK_WRITABLE_MS = 5 * 60 * 1000;
+
+/**
+ * QRの中身がURLのとき、コードを取り出すクエリパラメータの名前（FR-P03 基準5）。
+ * QRに入れる中身（コードそのものかURLか）は未決（案）。アプリ担当と決まったらここだけ直す。
+ */
+export const QR_CODE_QUERY_PARAM = "code";
+/** QR読み取りで、カメラの映像を調べる間隔（実装上の値） */
+export const QR_SCAN_INTERVAL_MS = 250;
+/** QRが見つからないまま続けてよい時間。過ぎたら手入力を案内する（案：30秒） */
+export const QR_SCAN_TIMEOUT_MS = 30_000;
+/** jsQRで調べるときの映像の最大幅（px。大きいほど遅い。実装上の値） */
+export const QR_FRAME_MAX_WIDTH = 640;

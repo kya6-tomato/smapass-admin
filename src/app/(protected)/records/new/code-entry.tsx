@@ -4,7 +4,9 @@ import { useState } from "react";
 import { DEVICE_CODE_MAX_LENGTH } from "@/config";
 import { checkCode, type TargetDevice } from "@/lib/device-session";
 import { CODE_REQUIRED_MESSAGE } from "@/lib/messages";
+import { extractCodeFromQrText, QR_NO_CODE_MESSAGE } from "@/lib/qr";
 import { enterDeviceCode } from "./actions";
+import { QrScanner } from "./qr-scanner";
 
 type Props = {
   /** 書き込みできる時間が終わっているとき true（再入力を促す見出しにする） */
@@ -16,15 +18,18 @@ type Props = {
 /**
  * アプリに表示された手入力コードで記録先の端末を指定する（FR-P03 基準1〜3）。
  * コードの形式と誤入力の回数制限はGoが判定する。ここでは空かどうかしか見ず、回数も数えない。
+ * QRを読み取った結果（基準5）も、手入力と同じ submitCode に渡す。カメラが使えなくても手入力はいつでも使える。
  */
 export function CodeEntry({ expired, onEntered, onUnauthenticated }: Props) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
-  async function submit() {
+  /** 手入力もQRも、ここを通ってGoに送る */
+  async function submitCode(raw: string) {
     if (pending) return;
-    const checked = checkCode(code);
+    const checked = checkCode(raw);
     if (!checked.ok && checked.reason === "empty") {
       setError(CODE_REQUIRED_MESSAGE);
       return;
@@ -32,7 +37,7 @@ export function CodeEntry({ expired, onEntered, onUnauthenticated }: Props) {
     setPending(true);
     setError(null);
     try {
-      const res = await enterDeviceCode(code);
+      const res = await enterDeviceCode(raw);
       if (res.ok) {
         setCode("");
         onEntered(res.target);
@@ -46,6 +51,17 @@ export function CodeEntry({ expired, onEntered, onUnauthenticated }: Props) {
     } finally {
       setPending(false);
     }
+  }
+
+  function onQrDecoded(text: string) {
+    setScanning(false);
+    const extracted = extractCodeFromQrText(text);
+    if (extracted === null) {
+      setError(QR_NO_CODE_MESSAGE);
+      return;
+    }
+    setCode(extracted); // 失敗したときに、読み取れたコードを見て直せるようにする
+    void submitCode(extracted);
   }
 
   return (
@@ -63,7 +79,7 @@ export function CodeEntry({ expired, onEntered, onUnauthenticated }: Props) {
         noValidate
         onSubmit={(e) => {
           e.preventDefault();
-          void submit();
+          void submitCode(code);
         }}
         className="mt-3 flex items-start gap-2"
       >
@@ -98,7 +114,16 @@ export function CodeEntry({ expired, onEntered, onUnauthenticated }: Props) {
         >
           このコードで指定する
         </button>
+        <button
+          type="button"
+          onClick={() => setScanning((v) => !v)}
+          aria-expanded={scanning}
+          className="rounded-md border border-brand px-5 py-2 font-semibold text-brand hover:bg-canvas"
+        >
+          QRを読み取る
+        </button>
       </form>
+      {scanning && <QrScanner onDecoded={onQrDecoded} onClose={() => setScanning(false)} />}
     </section>
   );
 }
