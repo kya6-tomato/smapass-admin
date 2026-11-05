@@ -62,4 +62,5 @@ npm run e2e        # E2Eテスト（Playwright。本番ビルドをモックで�
 ## モック
 
 - `USE_API_MOCK=true` のときだけ有効。画面右上に「モック接続」と出る
-- cookie `mock_scenario` で振る舞いを変えられる（E2Eで使う）：`device_missing`、`submit_error`、`status_slow`、`status_failed`、`status_stuck`
+- cookie `mock_scenario` で振る舞いを変えられる（E2Eで使う）：`device_missing`、`submit_error`、`status_slow`、`status_failed`、`status_stuck`、`submit_session_expired`（記録の送信が `device_session_expired` になる）
+- 手入力コード（FR-P03）はモックだけの取り決め。`123456`＝成功（書き込み5分）、`000004`＝成功（書き込み6秒。時間切れのE2E用）、`000001`＝`code_expired`、`000002`＝`code_used`、`000003`＝`too_many_attempts`。それ以外は `code_invalid` で、同じ誤りコードの6回目から `too_many_attempts`（Go側の判定を真似たもの。サイトは数えない）。成功コードは何度でも使える（本物は1回限り）

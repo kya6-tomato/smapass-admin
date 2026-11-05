@@ -33,4 +33,4 @@ E2Eを初めて動かすときは、先に `npx playwright install chromium` を
 
 ## 進み具合
 
-段階1（T-01〜T-06）をモックで実装済みです。Goの実APIとの結合（T-07）は、Go側の実装を待っています。詳しくは [docs/tasks.md](docs/tasks.md) を見てください。
+段階1（T-01〜T-06）と、手入力コードでの端末指定（T-09）をモックで実装済みです。Goの実APIとの結合（T-07）は、Go側の実装を待っています。詳しくは [docs/tasks.md](docs/tasks.md) を見てください。

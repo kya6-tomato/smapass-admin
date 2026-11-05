@@ -49,12 +49,13 @@ src/
     login/                      # FR-P01 ログイン画面
     actions/auth.ts             # ログイン・ログアウト（Server Action）
     (protected)/layout.tsx      # トークンをGoに確かめる。ヘッダー
-    (protected)/records/new/    # FR-P02・P04・P05 記録の入力から送信結果まで
+    (protected)/records/new/    # FR-P02・P03・P04・P05 記録先の指定（デモ端末／コード）、入力から送信結果まで
     api/records/[id]/route.ts   # 送信した記録の状態（BFFのRoute Handler）
   lib/
     go-client/                  # Goを呼ぶ処理（サーバー側専用）。types.ts / http.ts / mock.ts
     schemas/record.ts           # Zodスキーマ（画面とサーバーで共有）
     record-flow.ts              # 送信の状態（FR-P05の状態図）
+    device-session.ts           # コード入力の確認と記録先の期限（FR-P03）
     time.ts                     # 日本時間 → UTCの変換
     session.ts                  # ログインCookie
 e2e/                            # Playwright（受け入れ基準ごと）

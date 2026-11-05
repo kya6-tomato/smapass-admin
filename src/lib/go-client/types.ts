@@ -22,6 +22,16 @@ export type Device = {
   displayName: string;
 };
 
+// POST /device-sessions（FR-P03。案）
+export type DeviceSessionRequest = { code: string };
+export type DeviceSessionResponse = {
+  deviceId: string;
+  /** UTC・Z付き。この時刻まで、その端末に書き込める */
+  writableUntil: string;
+  /** 案：契約には未記載。Goが返すなら記録先の表示名に使い、なければ画面の既定の名前を使う */
+  displayName?: string;
+};
+
 /** このサイトから送る記録の種類。訂正・取り消しはFR-P07（発表後）なので含めない */
 export const RECORD_TYPES = ["repair", "part_replacement", "inspection"] as const;
 export type RecordType = (typeof RECORD_TYPES)[number];
@@ -62,6 +72,7 @@ export interface GoClient {
   logout(token: string): Promise<void>;
   getMe(token: string): Promise<Me>;
   getDemoDevice(token: string): Promise<Device>;
+  createDeviceSession(token: string, req: DeviceSessionRequest): Promise<DeviceSessionResponse>;
   createRecord(
     token: string,
     req: MaintenanceRecordRequest,

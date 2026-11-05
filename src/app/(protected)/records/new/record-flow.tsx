@@ -2,25 +2,36 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useReducer, useRef, useState } from "react";
-import type { DeviceView } from "@/lib/device";
+import { isWriteWindowClosed, type TargetDevice } from "@/lib/device-session";
 import { flowReducer, INITIAL_FLOW } from "@/lib/record-flow";
+import { remainingMs } from "@/lib/time";
 import { EMPTY_FORM, validateRecordForm, type FieldErrors, type RecordFormValues } from "@/lib/schemas/record";
 import type { RecordStatusResponse } from "@/app/api/records/[id]/route";
 import { submitRecord } from "./actions";
+import { CodeEntry } from "./code-entry";
 import { ConfirmView } from "./confirm-view";
 import { DeviceCard } from "./device-card";
 import { RecordForm } from "./record-form";
 import { StatusPanel } from "./status-panel";
+import { useNow } from "./use-now";
+import { WritableStatus } from "./writable-status";
 
 type Props = {
-  device: DeviceView | null;
+  /** 記録先。コードで指定した端末か、段階1のデモ端末。取れなければ null */
+  initialDevice: TargetDevice | null;
   polling: { intervalMs: number; timeoutMs: number };
   etherscanTxBase: string;
 };
 
 /** 入力 → 確認 → 送信 → 状態表示 をまとめる（FR-P04・FR-P05） */
-export function RecordFlow({ device, polling, etherscanTxBase }: Props) {
+export function RecordFlow({ initialDevice, polling, etherscanTxBase }: Props) {
   const router = useRouter();
+  const [device, setDevice] = useState<TargetDevice | null>(initialDevice);
+  // Goから device_session_expired が返ったら、手元の時計に関わらず時間切れとして扱う（FR-P03 基準4）
+  const [forcedExpired, setForcedExpired] = useState(false);
+  const now = useNow(device?.writableUntil != null);
+  const expired = device !== null && (forcedExpired || (now !== null && isWriteWindowClosed(device, now)));
+  const leftMs = device?.writableUntil != null && now !== null ? remainingMs(device.writableUntil, now) : null;
   const [values, setValues] = useState<RecordFormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [flow, dispatch] = useReducer(flowReducer, INITIAL_FLOW);
@@ -38,7 +49,7 @@ export function RecordFlow({ device, polling, etherscanTxBase }: Props) {
   }
 
   async function send(key: string | null) {
-    if (!device || !key || inFlight.current) return;
+    if (!device || !key || expired || inFlight.current) return;
     inFlight.current = true;
     try {
       const res = await submitRecord(device.deviceId, values, key);
@@ -49,6 +60,9 @@ export function RecordFlow({ device, polling, etherscanTxBase }: Props) {
         dispatch({ type: "invalid" });
       } else if (res.kind === "unauthenticated") {
         router.push("/login");
+      } else if (res.kind === "session_expired") {
+        setForcedExpired(true);
+        dispatch({ type: "sessionExpired" });
       } else {
         dispatch({ type: "sendFailed", message: res.message });
       }
@@ -119,12 +133,27 @@ export function RecordFlow({ device, polling, etherscanTxBase }: Props) {
     };
   }, [flow.phase, flow.recordId, polling.intervalMs, polling.timeoutMs, router]);
 
+  function onDeviceEntered(target: TargetDevice) {
+    setDevice(target);
+    setForcedExpired(false);
+  }
+
   const editing = flow.phase === "editing";
+  // 送信中・送信後はコードの入れ替えを受け付けない（送信先が途中で変わらないように）
+  const canEnterCode = editing || flow.phase === "confirming" || flow.phase === "failed";
   const confirming = flow.phase === "confirming";
 
   return (
     <div className="mt-6 space-y-6">
       <DeviceCard device={device} />
+      <WritableStatus hasDeadline={device?.writableUntil != null} remainingMs={leftMs} expired={expired} />
+      {canEnterCode && (
+        <CodeEntry
+          expired={expired}
+          onEntered={onDeviceEntered}
+          onUnauthenticated={() => router.push("/login")}
+        />
+      )}
 
       {editing && (
         <RecordForm
@@ -132,7 +161,7 @@ export function RecordFlow({ device, polling, etherscanTxBase }: Props) {
           errors={errors}
           onChange={setValues}
           onSubmit={goConfirm}
-          canSubmit={device !== null}
+          canSubmit={device !== null && !expired}
         />
       )}
 
@@ -140,7 +169,7 @@ export function RecordFlow({ device, polling, etherscanTxBase }: Props) {
         <ConfirmView
           values={values}
           sending={flow.phase === "sending"}
-          canSend={device !== null}
+          canSend={device !== null && !expired}
           onBack={() => dispatch({ type: "back" })}
           onSend={onSend}
         />

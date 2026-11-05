@@ -8,6 +8,8 @@ Goが OpenAPI を出せるなら、`openapi-typescript` などで型を生成し
 
 コード上の型は `src/lib/go-client/types.ts`、モックは `src/lib/go-client/mock.ts`。このファイルを変えたら両方を直す。
 
+モックの手入力コード（FR-P03）：`123456`＝成功（書き込み5分）、`000004`＝成功（6秒。E2E用）、`000001`＝`code_expired`、`000002`＝`code_used`、`000003`＝`too_many_attempts`、それ以外＝`code_invalid`（同じ誤りコードの6回目から`too_many_attempts`）。cookie `mock_scenario=submit_session_expired` で記録の送信が `device_session_expired`（403）になる。
+
 モック独自のエラーコード：`record_not_found`（404）、`chain_submit_failed`（記録の `error.code`）、`network_error`（通信できなかったとき。サイト側で付ける）。Go側でも同じ名前にするか確認する。
 
 ## 一覧
@@ -60,6 +62,7 @@ type DeviceSessionRequest = { code: string };
 type DeviceSessionResponse = {
   deviceId: string;
   writableUntil: string; // UTC・Z付き
+  displayName?: string;  // 案：記録先の表示名。Goが返せるなら使う。無ければ画面は「指定した端末」と出す（FR-P02と同じ表示にするため）
 };
 
 // POST /maintenance-records

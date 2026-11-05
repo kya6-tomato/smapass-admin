@@ -29,6 +29,7 @@ export type FlowAction =
   | { type: "send" }
   | { type: "sendFailed"; message: string }
   | { type: "invalid" }
+  | { type: "sessionExpired" }
   | { type: "accepted"; recordId: string }
   | { type: "status"; status: RecordStatus; txHash?: string; message?: string }
   | { type: "timeout" }
@@ -62,6 +63,10 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
       // サーバー側の検証で弾かれたら、入力画面に戻してエラーを見せる
       if (state.phase !== "sending") return state;
       return { ...INITIAL_FLOW };
+    case "sessionExpired":
+      // 書き込みできる時間が終わっていた（FR-P03 基準4）。記録は作られていないので、同じキーのまま確認画面に戻す
+      if (state.phase !== "sending") return state;
+      return { ...state, phase: "confirming", errorMessage: null, failedAt: null };
     case "accepted":
       if (state.phase !== "sending") return state;
       return { ...state, phase: "accepted", recordId: action.recordId };

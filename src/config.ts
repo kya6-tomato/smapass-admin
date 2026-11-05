@@ -39,3 +39,11 @@ export function getSessionCookieName(env: NodeJS.ProcessEnv = process.env): stri
 export function isMockEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   return env.USE_API_MOCK === "true";
 }
+
+/**
+ * 手入力コードの入力欄（FR-P03）。桁数と文字の種類は未決（案）。
+ * サイトは形式を判定せず、空でなければGoに送って判定してもらう。ここは異常に長い入力を弾くための上限だけ。
+ */
+export const DEVICE_CODE_MAX_LENGTH = 64;
+/** モックが返す「書き込みできる時間」（案：5分。本物はGoが決める） */
+export const MOCK_WRITABLE_MS = 5 * 60 * 1000;

@@ -14,6 +14,9 @@ const MESSAGES: Record<string, string> = {
   network_error: "サーバーと通信できませんでした",
 };
 
+/** コード欄が空のとき（Goには送らない） */
+export const CODE_REQUIRED_MESSAGE = "コードを入力してください";
+
 export const FALLBACK_MESSAGE = "エラーが発生しました。時間をおいて再度お試しください";
 
 export function messageForCode(code: string | undefined): string {
