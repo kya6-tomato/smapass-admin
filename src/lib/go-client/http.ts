@@ -1,6 +1,7 @@
 import { GoApiError } from "./errors";
 import type {
   Device,
+  DeviceSessionResponse,
   GoClient,
   LoginResponse,
   MaintenanceRecordAccepted,
@@ -54,6 +55,8 @@ export function createHttpClient(baseUrl: string): GoClient {
     logout: (token) => call<void>("/auth/logout", { method: "POST", token }),
     getMe: (token) => call<Me>("/me", { token }),
     getDemoDevice: (token) => call<Device>("/devices/demo", { token }),
+    createDeviceSession: (token, req) =>
+      call<DeviceSessionResponse>("/device-sessions", { method: "POST", token, body: req }),
     createRecord: (token, req, idempotencyKey) =>
       call<MaintenanceRecordAccepted>("/maintenance-records", {
         method: "POST",

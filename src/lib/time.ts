@@ -26,6 +26,27 @@ export function jstLocalToUtcIso(local: string): string | null {
   return new Date(asUtc - JST_OFFSET_MS).toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
+const UTC_ISO_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+
+/**
+ * Goが返した UTC・Z付きの時刻（writableUntil など）まであと何ミリ秒か。過ぎていれば0。
+ * Z付きISO 8601でなければ null（呼ぶ側は「期限切れ」として扱う）。
+ */
+export function remainingMs(utcIso: string, nowMs: number): number | null {
+  if (!UTC_ISO_PATTERN.test(utcIso)) return null;
+  const until = Date.parse(utcIso);
+  if (Number.isNaN(until)) return null;
+  return Math.max(0, until - nowMs);
+}
+
+/** 残り時間の表示（例 "4:32"）。秒は切り上げる */
+export function formatRemaining(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 /** 確認画面用の表示（例 "2026/11/10 14:30（日本時間）"） */
 export function formatJstLocal(local: string): string {
   const m = LOCAL_PATTERN.exec(local);
